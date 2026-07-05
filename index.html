@@ -148,7 +148,7 @@ async function maybeFetchCaption(r){
       const r2 = parseCaption(ta.value);
       applyParsed(r2);
       toast("본문을 자동으로 불러왔어요");
-      maybeLookupName(r2);
+      await maybeLookupName(r2);
     }else toast("본문을 찾지 못했어요. 이름·주소를 직접 입력해주세요");
   }catch(e){ toast("본문을 불러오지 못했어요. 직접 입력해주세요"); }
 }
@@ -325,10 +325,19 @@ function applyParsed(r){
   if(r.name && !document.getElementById("fName").value) document.getElementById("fName").value=r.name;
   if(r.address) document.getElementById("fAddr").value=r.address;
 }
-async function openAdd(prefill){
+async function openAdd(prefill, autoSave){
   ["fUrl","fCaption","fName","fAddr"].forEach(i=>document.getElementById(i).value="");
   _fetchedUrl=""; _lookedAddr="";
-  if(prefill){ const r=parseCaption(prefill); document.getElementById("fCaption").value=prefill; applyParsed(r); maybeFetchCaption(r); maybeLookupName(r); }
+  dlg.showModal();
+  if(prefill){
+    const r=parseCaption(prefill); document.getElementById("fCaption").value=prefill; applyParsed(r);
+    await maybeFetchCaption(r);
+    await maybeLookupName(parseCaption(document.getElementById("fCaption").value));
+    if(autoSave){
+      if(document.getElementById("fAddr").value.trim()){ savePlace(true); return; }
+      toast("주소를 못 찾았어요 — 직접 입력해주세요");
+    }
+  }
   else if(navigator.clipboard && navigator.clipboard.readText){
     try{
       const t = await navigator.clipboard.readText();
@@ -340,12 +349,11 @@ async function openAdd(prefill){
       }
     }catch(e){}
   }
-  dlg.showModal();
 }
 document.getElementById("addBtn").onclick=()=>openAdd();
 document.getElementById("dCancel").onclick=()=>dlg.close();
 document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r); maybeLookupName(r);});
-document.getElementById("dSave").onclick=()=>{
+function savePlace(auto){
   const url=document.getElementById("fUrl").value.trim();
   const name=document.getElementById("fName").value.trim();
   const addr=document.getElementById("fAddr").value.trim();
@@ -353,9 +361,11 @@ document.getElementById("dSave").onclick=()=>{
   if(!addr){ toast("주소를 입력해주세요"); return; }
   const finalName = name || "📍 "+addr.split(/\s+/).slice(-2).join(" ");
   const id=(url.match(/\/(?:reel|p)\/([\w-]+)/)||[])[1] || "u"+Date.now();
+  if(allPlaces().some(p=>p.id===id)){ dlg.close(); toast("이미 등록된 맛집이에요"); return; }
   userPlaces.push({id,name:finalName,address:addr,url:url||"#",tags:[],snippet:cap.replace(URL_RE,"").split("\n").filter(Boolean)[0]?.slice(0,80)||""});
-  SET("user",userPlaces); dlg.close(); toast("추가했어요! 지도에 핀을 찍는 중…"); render();
-};
+  SET("user",userPlaces); dlg.close(); toast(auto?"공유한 맛집을 자동 등록했어요!":"추가했어요! 지도에 핀을 찍는 중…"); render();
+}
+document.getElementById("dSave").onclick=()=>savePlace();
 
 // ───────── 파일 가져오기 (인스타 내보내기 or 백업) ─────────
 document.getElementById("importBtn").onclick=()=>document.getElementById("fileInput").click();
@@ -402,7 +412,7 @@ document.getElementById("backupBtn").onclick=()=>{
 (function(){
   const sp=new URLSearchParams(location.search);
   const shared=[sp.get("title"),sp.get("text"),sp.get("url")].filter(Boolean).join("\n");
-  if(shared){ history.replaceState(null,"",location.pathname); openAdd(shared); }
+  if(shared){ history.replaceState(null,"",location.pathname); openAdd(shared, URL_RE.test(shared)); }
 })();
 
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
