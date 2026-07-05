@@ -129,7 +129,7 @@ function fixMojibake(s){
   if(!/[ÃÂì í¬ë]/.test(s)) return s;
   try{ const b=new Uint8Array([...s].map(c=>c.charCodeAt(0)&0xff)); return new TextDecoder("utf-8",{fatal:true}).decode(b); }catch(e){ return s; }
 }
-const ADDR_RE = /((?:서울(?:특별시)?|경기(?:도)?|인천|부산|대구|대전|광주|울산|세종|강원|충청?[북남]|전라?[북남]|경상?[북남]|제주)[^\n,]*?[가-힣0-9]+(?:로|길|동|가)\s?\d+(?:[-·]\d+)?[^\n]*|[가-힣]+[시군구]\s[가-힣A-Za-z0-9]+(?:로|길)\s?\d+(?:[-·]\d+)?[^\n]*)/;
+const ADDR_RE = /((?:서울(?:특별시)?|경기(?:도)?|인천|부산|대구|대전|광주|울산|세종|강원|충청?[북남]|전라?[북남]|경상?[북남]|제주)[^\n,]*?[가-힣0-9]+(?:로|길|동|가)\s?\d+(?:[-·]\d+)?[^\n]*|[가-힣]+[시군구]\s[가-힣A-Za-z0-9]+(?:로|길|동|가|리)\s?\d+(?:[-·]\d+)?[^\n]*)/;
 const URL_RE = /https?:\/\/(?:www\.)?instagram\.com\/(?:reel|p)\/[\w-]+\/?[^\s]*/;
 
 // ───────── 본문 자동 가져오기 (Cloudflare Worker 프록시) ─────────
@@ -412,4 +412,3 @@ render();
 </script>
 </body>
 </html>
-
