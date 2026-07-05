@@ -140,10 +140,32 @@ async function maybeFetchCaption(r){
     if(j.caption){
       const ta=document.getElementById("fCaption");
       ta.value = r.url+"\n\n"+j.caption;
-      applyParsed(parseCaption(ta.value));
+      const r2 = parseCaption(ta.value);
+      applyParsed(r2);
       toast("본문을 자동으로 불러왔어요");
+      maybeLookupName(r2);
     }else toast("본문을 찾지 못했어요. 이름·주소를 직접 입력해주세요");
   }catch(e){ toast("본문을 불러오지 못했어요. 직접 입력해주세요"); }
+}
+
+// 주소로 네이버 플레이스에서 실제 가게 이름·좌표 찾기
+let _lookedAddr = "";
+async function maybeLookupName(r){
+  if(!PROXY) return;
+  const addr = (r && r.address) || document.getElementById("fAddr").value.trim();
+  if(!addr || _lookedAddr===addr) return;
+  const curName = document.getElementById("fName").value.trim();
+  if(curName && !/^@?[A-Za-z0-9._]+$/.test(curName)) return; // 제대로 된 이름이 이미 있으면 유지
+  _lookedAddr = addr;
+  try{
+    const res = await fetch(PROXY+"?place="+encodeURIComponent(addr));
+    const j = await res.json();
+    if(j && j.name){
+      document.getElementById("fName").value = j.name;
+      if(j.lat && j.lng){ coords[addr]=[j.lat,j.lng]; SET("coords",coords); }
+      toast("네이버에서 가게 이름을 찾았어요: "+j.name);
+    }
+  }catch(e){}
 }
 function parseCaption(text){
   const res = {name:"", address:"", url:""};
@@ -300,8 +322,8 @@ function applyParsed(r){
 }
 async function openAdd(prefill){
   ["fUrl","fCaption","fName","fAddr"].forEach(i=>document.getElementById(i).value="");
-  _fetchedUrl="";
-  if(prefill){ const r=parseCaption(prefill); document.getElementById("fCaption").value=prefill; applyParsed(r); maybeFetchCaption(r); }
+  _fetchedUrl=""; _lookedAddr="";
+  if(prefill){ const r=parseCaption(prefill); document.getElementById("fCaption").value=prefill; applyParsed(r); maybeFetchCaption(r); maybeLookupName(r); }
   else if(navigator.clipboard && navigator.clipboard.readText){
     try{
       const t = await navigator.clipboard.readText();
@@ -309,7 +331,7 @@ async function openAdd(prefill){
         const r=parseCaption(t);
         document.getElementById("fCaption").value=t; applyParsed(r);
         toast("클립보드 내용을 자동으로 불러왔어요");
-        maybeFetchCaption(r);
+        maybeFetchCaption(r); maybeLookupName(r);
       }
     }catch(e){}
   }
@@ -317,7 +339,7 @@ async function openAdd(prefill){
 }
 document.getElementById("addBtn").onclick=()=>openAdd();
 document.getElementById("dCancel").onclick=()=>dlg.close();
-document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r);});
+document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r); maybeLookupName(r);});
 document.getElementById("dSave").onclick=()=>{
   const url=document.getElementById("fUrl").value.trim();
   const name=document.getElementById("fName").value.trim();
