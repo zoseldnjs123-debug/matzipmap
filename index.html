@@ -172,7 +172,7 @@ function parseCaption(text){
       const prev = lines[idx-1];
       const em = prev.match(/^([^\w\s가-힣]+)\s*(.+)/u);
       const cand = em ? em[2] : prev;
-      if(cand && cand.length<=30 && !ADDR_RE.test(prev) && !/추천|후기|저장|공유/.test(cand)) res.name = cand.trim();
+      if(cand && cand.length<=30 && !ADDR_RE.test(prev) && !/추천|후기|저장|공유/.test(cand) && !/^@?[A-Za-z0-9._]+$/.test(cand.trim())) res.name = cand.trim();
     }
   }
   res.address = res.address.replace(/[📍🥢🍠➡️🏠🛖]|\s{2,}/gu," ").trim();
@@ -180,11 +180,15 @@ function parseCaption(text){
 }
 
 // ───────── 지오코딩 (Nominatim, 캐시) ─────────
+const _retried={};
 async function geocode(addr){
   if(coords[addr]) return coords[addr];
-  if(coords[addr]===null) return null;
+  if(coords[addr]===null){ if(_retried[addr]) return null; _retried[addr]=1; } // 이전 실패 주소도 세션당 1회 재시도
   const clean = addr.replace(/\(.*?\)/g,"").replace(/\s?\d+층.*$|\s?지하.*$/,"").trim();
-  for(const q of [clean, clean.split(/\s/).slice(0,4).join(" ")]){
+  const qs = [clean, clean.split(/\s/).slice(0,4).join(" ")];
+  const jb = clean.match(/^(.*?[가-힣](?:동|리|가|로|길))\s*\d/);
+  if(jb) qs.push(jb[1]); // 지번 인식 실패 시 동·길 단위로라도 핀 찍기
+  for(const q of [...new Set(qs)]){
     try{
       const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q="+encodeURIComponent(q),{headers:{"Accept-Language":"ko"}});
       const j = await r.json();
@@ -202,7 +206,7 @@ L.control.zoom({position:"bottomright"}).addTo(map);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
 let markers = {};
 
-function naverLink(p){ return "https://map.naver.com/p/search/"+encodeURIComponent(p.name||p.address); }
+function naverLink(p){ const handle=/^@?[A-Za-z0-9._]+$/.test((p.name||"").trim()); return "https://map.naver.com/p/search/"+encodeURIComponent((!p.name||handle||p.name.startsWith("📍"))?p.address:p.name); }
 function markerFor(p, ll){
   const icon = L.divIcon({className:"", html:`<div style="font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))">${visited[p.id]?"✅":"📍"}</div>`, iconSize:[26,26], iconAnchor:[13,24]});
   const mk = L.marker(ll,{icon}).addTo(map);
@@ -319,9 +323,10 @@ document.getElementById("dSave").onclick=()=>{
   const name=document.getElementById("fName").value.trim();
   const addr=document.getElementById("fAddr").value.trim();
   const cap=document.getElementById("fCaption").value.trim();
-  if(!name||!addr){ toast("가게 이름과 주소를 입력해주세요"); return; }
+  if(!addr){ toast("주소를 입력해주세요"); return; }
+  const finalName = name || "📍 "+addr.split(/\s+/).slice(-2).join(" ");
   const id=(url.match(/\/(?:reel|p)\/([\w-]+)/)||[])[1] || "u"+Date.now();
-  userPlaces.push({id,name,address:addr,url:url||"#",tags:[],snippet:cap.replace(URL_RE,"").split("\n").filter(Boolean)[0]?.slice(0,80)||""});
+  userPlaces.push({id,name:finalName,address:addr,url:url||"#",tags:[],snippet:cap.replace(URL_RE,"").split("\n").filter(Boolean)[0]?.slice(0,80)||""});
   SET("user",userPlaces); dlg.close(); toast("추가했어요! 지도에 핀을 찍는 중…"); render();
 };
 
