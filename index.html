@@ -126,6 +126,25 @@ function fixMojibake(s){
 }
 const ADDR_RE = /((?:서울(?:특별시)?|경기(?:도)?|인천|부산|대구|대전|광주|울산|세종|강원|충청?[북남]|전라?[북남]|경상?[북남]|제주)[^\n,]*?[가-힣0-9]+(?:로|길|동|가)\s?\d+(?:[-·]\d+)?[^\n]*|[가-힣]+[시군구]\s[가-힣A-Za-z0-9]+(?:로|길)\s?\d+(?:[-·]\d+)?[^\n]*)/;
 const URL_RE = /https?:\/\/(?:www\.)?instagram\.com\/(?:reel|p)\/[\w-]+\/?[^\s]*/;
+
+// ───────── 본문 자동 가져오기 (Cloudflare Worker 프록시) ─────────
+const PROXY = "https://matzip-proxy.zoseldnjs123.workers.dev";
+let _fetchedUrl = "";
+async function maybeFetchCaption(r){
+  if(!PROXY || !r.url || r.address || _fetchedUrl===r.url) return;
+  _fetchedUrl = r.url;
+  toast("본문을 불러오는 중…");
+  try{
+    const res = await fetch(PROXY+"?url="+encodeURIComponent(r.url));
+    const j = await res.json();
+    if(j.caption){
+      const ta=document.getElementById("fCaption");
+      ta.value = r.url+"\n\n"+j.caption;
+      applyParsed(parseCaption(ta.value));
+      toast("본문을 자동으로 불러왔어요");
+    }else toast("본문을 찾지 못했어요. 이름·주소를 직접 입력해주세요");
+  }catch(e){ toast("본문을 불러오지 못했어요. 직접 입력해주세요"); }
+}
 function parseCaption(text){
   const res = {name:"", address:"", url:""};
   if(!text) return res;
@@ -277,13 +296,16 @@ function applyParsed(r){
 }
 async function openAdd(prefill){
   ["fUrl","fCaption","fName","fAddr"].forEach(i=>document.getElementById(i).value="");
-  if(prefill){ document.getElementById("fCaption").value=prefill; applyParsed(parseCaption(prefill)); }
+  _fetchedUrl="";
+  if(prefill){ const r=parseCaption(prefill); document.getElementById("fCaption").value=prefill; applyParsed(r); maybeFetchCaption(r); }
   else if(navigator.clipboard && navigator.clipboard.readText){
     try{
       const t = await navigator.clipboard.readText();
       if(t && (URL_RE.test(t) || ADDR_RE.test(t))){
-        document.getElementById("fCaption").value=t; applyParsed(parseCaption(t));
+        const r=parseCaption(t);
+        document.getElementById("fCaption").value=t; applyParsed(r);
         toast("클립보드 내용을 자동으로 불러왔어요");
+        maybeFetchCaption(r);
       }
     }catch(e){}
   }
@@ -291,7 +313,7 @@ async function openAdd(prefill){
 }
 document.getElementById("addBtn").onclick=()=>openAdd();
 document.getElementById("dCancel").onclick=()=>dlg.close();
-document.getElementById("fCaption").addEventListener("input",e=>applyParsed(parseCaption(e.target.value)));
+document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r);});
 document.getElementById("dSave").onclick=()=>{
   const url=document.getElementById("fUrl").value.trim();
   const name=document.getElementById("fName").value.trim();
@@ -358,4 +380,3 @@ render();
 </script>
 </body>
 </html>
-
