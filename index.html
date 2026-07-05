@@ -72,6 +72,7 @@
 <header>
   <h1>🍜 맛집 지도 <span class="count" id="count"></span>
     <span class="hbtns">
+      <button class="hbtn" id="syncBtn" title="클라우드 동기화">☁️</button>
       <button class="hbtn" id="backupBtn" title="내 데이터 백업">💾</button>
       <button class="hbtn" id="importBtn">📥</button>
       <button class="hbtn primary" id="addBtn">＋ 추가</button>
@@ -106,11 +107,42 @@
 <script>
 // ───────── 저장소 ─────────
 const LS = k => { try{return JSON.parse(localStorage.getItem("matzip_"+k))}catch(e){return null} };
-const SET = (k,v) => localStorage.setItem("matzip_"+k, JSON.stringify(v));
+const SET = (k,v) => { localStorage.setItem("matzip_"+k, JSON.stringify(v)); if(k==="user"||k==="userOthers"||k==="visited"||k==="coords") pushSync(); };
 let userPlaces = LS("user") || [];
 let userOthers = LS("userOthers") || [];
 let visited = LS("visited") || {};
 let coords = LS("coords") || {};
+
+// ───────── 클라우드 동기화 (Cloudflare KV) ─────────
+let syncKey = localStorage.getItem("matzip_syncKey") || "";
+let _pushT = null, _pulling = false;
+function pushSync(){
+  if(!syncKey || _pulling) return;
+  clearTimeout(_pushT);
+  _pushT = setTimeout(()=>{
+    fetch(PROXY+"?saveall=1&key="+encodeURIComponent(syncKey),{method:"POST",body:JSON.stringify({places:userPlaces,others:userOthers,visited,coords})}).catch(()=>{});
+  },800);
+}
+async function pullSync(show){
+  if(!syncKey) return;
+  _pulling = true;
+  try{
+    const r = await fetch(PROXY+"?data=1&key="+encodeURIComponent(syncKey));
+    const j = await r.json();
+    if(r.status!==200){ _pulling=false; toast(j.error||"동기화 실패"); return; }
+    const ids = new Set(userPlaces.map(p=>p.id));
+    for(const p of (j.places||[])) if(!ids.has(p.id)) userPlaces.push(p);
+    const urls = new Set(userOthers.map(o=>o.url));
+    for(const o of (j.others||[])) if(!urls.has(o.url)) userOthers.push(o);
+    visited = Object.assign({}, j.visited||{}, visited);
+    coords = Object.assign({}, j.coords||{}, coords);
+    SET("user",userPlaces); SET("userOthers",userOthers); SET("visited",visited); SET("coords",coords);
+    _pulling = false;
+    pushSync(); // 합친 최신본을 서버에도 반영
+    render();
+    if(show) toast("동기화 완료 — 맛집 "+userPlaces.length+"곳");
+  }catch(e){ _pulling=false; if(show) toast("동기화 실패 — 네트워크를 확인해주세요"); }
+}
 
 const allPlaces = () => {
   const seen = new Set(); const out = [];
@@ -351,6 +383,12 @@ async function openAdd(prefill, autoSave){
   }
 }
 document.getElementById("addBtn").onclick=()=>openAdd();
+document.getElementById("syncBtn").onclick=()=>{
+  const k = prompt("동기화 암호를 입력하세요 (6자 이상)\n이 암호가 곧 내 지도예요 — 내 기기들끼리는 같게, 남과는 다르게!", syncKey);
+  if(k===null) return;
+  syncKey = k.trim(); localStorage.setItem("matzip_syncKey", syncKey);
+  if(syncKey) pullSync(true); else toast("동기화를 껐어요");
+};
 document.getElementById("dCancel").onclick=()=>dlg.close();
 document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r); maybeLookupName(r);});
 function savePlace(auto){
@@ -419,7 +457,8 @@ function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg
 
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 render();
+if(syncKey) pullSync();
+else setTimeout(()=>toast("☁️ 버튼에서 동기화 암호를 설정하면 모든 기기의 목록이 하나로 합쳐져요"),1200);
 </script>
 </body>
 </html>
-
