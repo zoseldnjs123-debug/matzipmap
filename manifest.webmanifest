@@ -1,6 +1,6 @@
 {
-  "name": "맛집 지도",
-  "short_name": "맛집지도",
+  "name": "릴스맛집지도",
+  "short_name": "릴스맛집지도",
   "description": "인스타그램에 저장한 맛집 릴스를 지도에서 한눈에",
   "start_url": "./",
   "scope": "./",
