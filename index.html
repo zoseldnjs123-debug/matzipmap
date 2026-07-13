@@ -3,86 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#111114">
-<title>🍜 맛집 지도</title>
+<meta name="theme-color" content="#ffffff">
+<title>맛집지도 — 인스타 맛집 릴스를 지도로</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  :root{--bg:#111114;--card:#1c1c21;--card2:#26262c;--ink:#f2f2f5;--sub:#9a9aa3;--accent:#ff6b47;--accent-soft:rgba(255,107,71,.14);--line:#2b2b32;--green:#30d158;}
+  :root{--bg:#ffffff;--bg2:#f9fafb;--fill:#f2f4f6;--ink:#191f28;--sub:#8b95a1;--sub2:#4e5968;--accent:#ff6b47;--accent-soft:#fff0ec;--line:#f2f4f6;--green:#12b76a;--green-soft:#e9f9f0;--red:#f04452;--red-soft:#fdf2f2;}
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;background:var(--bg);color:var(--ink)}
-  header{position:sticky;top:0;z-index:1001;background:rgba(17,17,20,.88);backdrop-filter:blur(14px);padding:calc(env(safe-area-inset-top) + 14px) 16px 10px;border-bottom:1px solid var(--line)}
-  header h1{font-size:19px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  header h1 .count{font-size:12px;color:var(--sub);font-weight:500}
-  .hbtns{display:flex;gap:6px;margin-left:auto}
-  .hbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer}
-  .hbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
-  .chips{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 4px;scrollbar-width:none}
+  header{position:sticky;top:0;z-index:1001;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);padding:calc(env(safe-area-inset-top) + 14px) 20px 8px;border-bottom:1px solid var(--line)}
+  .hrow{display:flex;align-items:center;gap:8px}
+  header h1{font-size:21px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:baseline;gap:7px}
+  header h1 .count{font-size:13px;color:var(--sub);font-weight:600}
+  .hbtns{display:flex;gap:8px;margin-left:auto}
+  .hbtn{border:none;background:var(--fill);color:var(--sub2);border-radius:12px;padding:9px 13px;font-size:14px;cursor:pointer;font-weight:600}
+  .hbtn:active{opacity:.7}
+  .hbtn.primary{background:var(--accent);color:#fff;font-weight:700}
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 10px;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:5px 12px;font-size:13px;color:var(--sub);cursor:pointer;white-space:nowrap}
-  .chip.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
-  #map{height:48vh;min-height:280px;border-bottom:1px solid var(--line)}
-  .list{padding:12px 16px calc(env(safe-area-inset-bottom) + 90px);display:flex;flex-direction:column;gap:12px}
-  .empty{text-align:center;color:var(--sub);font-size:14px;line-height:1.8;padding:40px 20px}
-  .empty .big{font-size:40px}
-  .card{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;transition:box-shadow .15s,transform .1s;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .chip{flex:none;border:none;background:var(--fill);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;color:var(--sub2);cursor:pointer;white-space:nowrap}
+  .chip.on{background:var(--ink);color:#fff}
+  #map{height:46vh;min-height:270px;border-bottom:1px solid var(--line)}
+  .list{padding:14px 20px calc(env(safe-area-inset-bottom) + 90px);display:flex;flex-direction:column;gap:10px;background:var(--bg2);min-height:30vh}
+  .empty{text-align:center;color:var(--sub);font-size:14px;line-height:1.8;padding:44px 20px}
+  .empty .big{font-size:44px;margin-bottom:6px}
+  .empty b{color:var(--ink)}
+  .ebtn{display:inline-block;margin-top:16px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:15px;border-radius:14px;padding:13px 22px;cursor:pointer}
+  .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;cursor:pointer;transition:transform .1s;box-shadow:0 1px 4px rgba(25,31,40,.04)}
   .card:active{transform:scale(.985)}
-  .card.hl{box-shadow:0 0 0 2px var(--accent),0 2px 14px rgba(255,107,71,.25)}
+  .card.hl{box-shadow:0 0 0 2px var(--accent),0 4px 14px rgba(255,107,71,.15)}
   .card .top{display:flex;align-items:flex-start;gap:8px}
   .card h3{font-size:16px;font-weight:700;flex:1;letter-spacing:-.2px}
-  .card .region{font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 9px;flex:none;font-weight:600}
+  .card .region{font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:4px 10px;flex:none;font-weight:700}
   .card .addr{font-size:13px;color:var(--sub);margin-top:5px}
-  .card .snippet{font-size:12px;color:var(--sub);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;opacity:.85}
-  .card .acts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
-  .abtn{font-size:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:7px 12px;cursor:pointer;text-decoration:none;color:var(--ink)}
-  .abtn.visited{background:var(--green);color:#04210d;border-color:var(--green);font-weight:600}
-  .abtn.del{color:#ff7a6e;border-color:rgba(255,122,110,.35)}
-  .nopin{font-size:11px;color:#ff9d94;margin-top:5px}
-  .sect{font-size:13px;color:var(--sub);margin:14px 2px 2px;font-weight:600}
-  .other{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:13px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .other a{color:var(--accent);text-decoration:none;flex:none;font-size:12px}
+  .card .snippet{font-size:12px;color:var(--sub);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}
+  .card .acts{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .abtn{font-size:13px;border:none;background:var(--fill);border-radius:10px;padding:9px 13px;cursor:pointer;text-decoration:none;color:var(--sub2);font-weight:600}
+  .abtn.visited{background:var(--green-soft);color:var(--green)}
+  .abtn.del{color:var(--red);background:var(--red-soft)}
+  .nopin{font-size:11px;color:var(--red);margin-top:5px}
+  .sect{font-size:13px;color:var(--sub);margin:14px 2px 2px;font-weight:700}
+  .other{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;font-size:13px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .other a{color:var(--accent);text-decoration:none;flex:none;font-size:12px;font-weight:700}
   .other .t{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  dialog{border:1px solid var(--line);border-radius:20px;padding:0;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.6);max-height:85vh;overflow-y:auto;background:var(--card);color:var(--ink)}
-  dialog::backdrop{background:rgba(0,0,0,.55)}
-  .dbody{padding:20px}
-  .dbody h2{font-size:17px;margin-bottom:14px}
-  .dbody label{font-size:12px;color:var(--sub);display:block;margin:10px 0 4px}
-  .dbody input,.dbody textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--ink)}
-  .dbody input::placeholder,.dbody textarea::placeholder{color:#5c5c66}
-  .dbody input:focus,.dbody textarea:focus{outline:none;border-color:var(--accent)}
+  dialog{border:none;border-radius:24px;padding:0;width:min(480px,92vw);box-shadow:0 20px 60px rgba(25,31,40,.18);max-height:85vh;overflow-y:auto;background:#fff;color:var(--ink)}
+  dialog::backdrop{background:rgba(25,31,40,.4)}
+  .dbody{padding:24px}
+  .dbody h2{font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:6px}
+  .dsub{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:14px}
+  .dbody label{font-size:12px;color:var(--sub);display:block;margin:12px 0 5px;font-weight:600}
+  .dbody input,.dbody textarea{width:100%;border:1.5px solid var(--fill);border-radius:14px;padding:13px;font-size:15px;font-family:inherit;background:var(--bg2);color:var(--ink)}
+  .dbody input::placeholder,.dbody textarea::placeholder{color:#b0b8c1}
+  .dbody input:focus,.dbody textarea:focus{outline:none;border-color:var(--accent);background:#fff}
   .dbody textarea{height:110px;resize:vertical}
-  .drow{display:flex;gap:8px;margin-top:16px}
-  .dbtn{flex:1;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:14px;cursor:pointer;background:var(--card2);color:var(--ink)}
-  .dbtn.go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
-  .hint{font-size:11px;color:var(--sub);margin-top:8px;line-height:1.5}
-  .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%);background:var(--ink);color:#111114;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none;max-width:88vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .drow{display:flex;gap:8px;margin-top:18px}
+  .dbtn{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--sub2)}
+  .dbtn.go{background:var(--accent);color:#fff}
+  .hint{font-size:12px;color:var(--sub);margin-top:10px;line-height:1.6}
+  .srow{display:block;width:100%;text-align:left;border:none;background:var(--bg2);border-radius:14px;padding:15px 16px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-top:8px;font-family:inherit}
+  .srow:active{background:var(--fill)}
+  .srow .state{float:right;font-size:12px;color:var(--sub);font-weight:500}
+  .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none;max-width:88vw;text-align:center;box-shadow:0 8px 24px rgba(25,31,40,.25)}
   .toast.show{opacity:1}
-  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--card);color:var(--ink);box-shadow:0 6px 24px rgba(0,0,0,.5)}
-  .leaflet-popup-content{font-size:13px;line-height:1.5}
+  .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 6px 24px rgba(25,31,40,.15)}
+  .leaflet-popup-content{font-size:13px;line-height:1.5;color:var(--ink)}
   .leaflet-popup-content b{font-size:14px}
-  .leaflet-container a.leaflet-popup-close-button{color:var(--sub)}
   .pop-acts{display:flex;gap:6px;margin-top:8px}
-  .pop-acts a{font-size:12px;text-decoration:none;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:4px 8px}
+  .pop-acts a{font-size:12px;text-decoration:none;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:5px 9px;font-weight:700}
   input[type=file]{display:none}
+  /* 온보딩 */
+  #onboard{position:fixed;inset:0;background:#fff;z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px}
+  #onboard[hidden]{display:none}
+  .ob-inner{max-width:380px;width:100%;text-align:center}
+  .ob-emoji{font-size:56px}
+  .ob-inner h2{font-size:23px;font-weight:800;letter-spacing:-.5px;line-height:1.35;margin:14px 0 26px}
+  .ob-steps{text-align:left;display:flex;flex-direction:column;gap:14px;margin-bottom:30px}
+  .ob-step{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);border-radius:18px;padding:16px}
+  .ob-step span{font-size:26px;flex:none}
+  .ob-step div{font-size:13px;color:var(--sub);line-height:1.55}
+  .ob-step b{display:block;font-size:15px;color:var(--ink);margin-bottom:2px}
+  .ob-go{width:100%;border:none;background:var(--accent);color:#fff;font-size:16px;font-weight:700;border-radius:16px;padding:16px;cursor:pointer;font-family:inherit}
+  .ob-skip{width:100%;border:none;background:none;color:var(--sub);font-size:14px;padding:14px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
 <header>
-  <h1>🍜 맛집 지도 <span class="count" id="count"></span>
+  <div class="hrow">
+    <h1>맛집지도 <span class="count" id="count"></span></h1>
     <span class="hbtns">
-      <button class="hbtn" id="syncBtn" title="클라우드 동기화">☁️</button>
-      <button class="hbtn" id="backupBtn" title="내 데이터 백업">💾</button>
-      <button class="hbtn" id="importBtn">📥</button>
+      <button class="hbtn" id="setBtn" aria-label="설정">⚙️</button>
       <button class="hbtn primary" id="addBtn">＋ 추가</button>
     </span>
-  </h1>
+  </div>
   <div class="chips" id="chips"></div>
 </header>
 <div id="map"></div>
 <div class="list" id="list"></div>
 <input type="file" id="fileInput" accept=".json">
+
+<div id="onboard" hidden>
+  <div class="ob-inner">
+    <div class="ob-emoji">🍜</div>
+    <h2>저장만 해둔 맛집 릴스,<br>지도 위에 자동으로</h2>
+    <div class="ob-steps">
+      <div class="ob-step"><span>📲</span><div><b>인스타에서 공유 한 번</b>가게 이름과 주소를 자동으로 찾아 등록해요</div></div>
+      <div class="ob-step"><span>🗺️</span><div><b>지도에서 한눈에</b>동네별로 모아보고, 가본 곳은 체크해요</div></div>
+      <div class="ob-step"><span>🔑</span><div><b>암호 하나로 어디서든</b>폰·아이패드·노트북이 같은 지도를 봐요</div></div>
+    </div>
+    <button class="ob-go" id="obStart">시작하기</button>
+    <button class="ob-skip" id="obSkip">그냥 둘러볼게요</button>
+  </div>
+</div>
 
 <dialog id="addDlg">
   <div class="dbody">
@@ -95,13 +128,38 @@
     <input id="fName" placeholder="본문에서 자동 추출돼요">
     <label>주소</label>
     <input id="fAddr" placeholder="본문에서 자동 추출돼요">
-    <div class="hint">💡 인스타 앱에서: 게시물 ⋯ 메뉴 → 링크 복사 → 여기 붙여넣기. 본문은 캡션을 길게 눌러 복사하거나 직접 입력해주세요.</div>
+    <div class="hint">💡 인스타 앱에서: 게시물 ⋯ 메뉴 → 링크 복사 → 여기 붙여넣기</div>
     <div class="drow">
       <button class="dbtn" id="dCancel">취소</button>
       <button class="dbtn go" id="dSave">지도에 추가</button>
     </div>
   </div>
 </dialog>
+
+<dialog id="syncDlg">
+  <div class="dbody">
+    <h2>동기화 암호</h2>
+    <p class="dsub">이 암호가 곧 내 지도예요. 어떤 기기에서든 같은 암호를 넣으면 같은 지도가 열려요.</p>
+    <input id="fSyncKey" placeholder="6자 이상 (영문+숫자 추천)">
+    <div class="hint">· 암호를 잊으면 지도를 다시 찾을 수 없어요<br>· 커플·친구와 같은 암호를 쓰면 지도를 함께 꾸며요<br>· 비워두고 저장하면 동기화가 꺼져요</div>
+    <div class="drow">
+      <button class="dbtn" id="sCancel">취소</button>
+      <button class="dbtn go" id="sSave">저장</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="setDlg">
+  <div class="dbody">
+    <h2>설정</h2>
+    <button class="srow" id="mSync">☁️ 동기화 암호 <span class="state" id="syncState"></span></button>
+    <button class="srow" id="mBackup">💾 내 데이터 백업하기</button>
+    <button class="srow" id="mImport">📥 파일 불러오기 <span class="state">백업 · 인스타 내보내기</span></button>
+    <button class="srow" id="mGuide">📖 처음 사용 안내 다시 보기</button>
+    <div class="drow"><button class="dbtn" id="setClose">닫기</button></div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -185,7 +243,7 @@ async function maybeFetchCaption(r){
   }catch(e){ toast("본문을 불러오지 못했어요. 직접 입력해주세요"); }
 }
 
-// 주소로 네이버 플레이스에서 실제 가게 이름·좌표 찾기
+// 주소로 실제 가게 이름·좌표 찾기
 let _lookedAddr = "";
 async function maybeLookupName(r){
   if(!PROXY) return;
@@ -262,12 +320,12 @@ async function geocode(addr){
 // ───────── 지도 ─────────
 const map = L.map("map",{zoomControl:false}).setView([37.5665,126.978],12);
 L.control.zoom({position:"bottomright"}).addTo(map);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
 let markers = {};
 
 function naverLink(p){ const handle=/^@?[A-Za-z0-9._]+$/.test((p.name||"").trim()); return "https://map.naver.com/p/search/"+encodeURIComponent((!p.name||handle||p.name.startsWith("📍"))?p.address:p.name); }
 function markerFor(p, ll){
-  const icon = L.divIcon({className:"", html:`<div style="font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))">${visited[p.id]?"✅":"📍"}</div>`, iconSize:[26,26], iconAnchor:[13,24]});
+  const icon = L.divIcon({className:"", html:`<div style="font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))">${visited[p.id]?"✅":"📍"}</div>`, iconSize:[26,26], iconAnchor:[13,24]});
   const mk = L.marker(ll,{icon}).addTo(map);
   mk.bindPopup(`<b>${p.name}</b><br>${p.address}<div class="pop-acts">
     <a href="${naverLink(p)}" target="_blank">네이버지도</a>
@@ -307,9 +365,9 @@ async function render(){
   list.innerHTML = "";
   if(!allPlaces().length && !allOthers().length){
     list.innerHTML = `<div class="empty"><div class="big">🗺️</div>
-      아직 저장된 맛집이 없어요.<br>
-      <b>＋ 추가</b>로 인스타 게시물을 붙여넣거나,<br>
-      <b>📥</b>로 인스타그램 내보내기 파일(saved_posts.json)을 불러오세요.</div>`;
+      <b>아직 저장한 맛집이 없어요</b><br>
+      인스타 맛집 릴스 링크를 붙여넣으면<br>가게 이름과 주소를 자동으로 찾아드려요<br>
+      <button class="ebtn" onclick="openAdd()">첫 맛집 추가하기</button></div>`;
     return;
   }
   for(const p of places){
@@ -382,13 +440,8 @@ async function openAdd(prefill, autoSave){
     }catch(e){}
   }
 }
+window.openAdd = openAdd;
 document.getElementById("addBtn").onclick=()=>openAdd();
-document.getElementById("syncBtn").onclick=()=>{
-  const k = prompt("동기화 암호를 입력하세요 (6자 이상)\n이 암호가 곧 내 지도예요 — 내 기기들끼리는 같게, 남과는 다르게!", syncKey);
-  if(k===null) return;
-  syncKey = k.trim(); localStorage.setItem("matzip_syncKey", syncKey);
-  if(syncKey) pullSync(true); else toast("동기화를 껐어요");
-};
 document.getElementById("dCancel").onclick=()=>dlg.close();
 document.getElementById("fCaption").addEventListener("input",e=>{const r=parseCaption(e.target.value); applyParsed(r); maybeFetchCaption(r); maybeLookupName(r);});
 function savePlace(auto){
@@ -405,8 +458,40 @@ function savePlace(auto){
 }
 document.getElementById("dSave").onclick=()=>savePlace();
 
+// ───────── 동기화 다이얼로그 ─────────
+const syncDlg=document.getElementById("syncDlg");
+function openSync(){
+  document.getElementById("fSyncKey").value=syncKey;
+  syncDlg.showModal();
+}
+document.getElementById("sCancel").onclick=()=>syncDlg.close();
+document.getElementById("sSave").onclick=()=>{
+  const k=document.getElementById("fSyncKey").value.trim();
+  if(k && k.length<6){ toast("암호는 6자 이상으로 정해주세요"); return; }
+  syncKey=k; localStorage.setItem("matzip_syncKey", syncKey);
+  syncDlg.close();
+  if(syncKey) pullSync(true); else toast("동기화를 껐어요");
+};
+
+// ───────── 설정 다이얼로그 ─────────
+const setDlg=document.getElementById("setDlg");
+document.getElementById("setBtn").onclick=()=>{
+  document.getElementById("syncState").textContent = syncKey ? "켜짐" : "꺼짐";
+  setDlg.showModal();
+};
+document.getElementById("setClose").onclick=()=>setDlg.close();
+document.getElementById("mSync").onclick=()=>{ setDlg.close(); openSync(); };
+document.getElementById("mGuide").onclick=()=>{ setDlg.close(); showOnboard(); };
+document.getElementById("mImport").onclick=()=>{ setDlg.close(); document.getElementById("fileInput").click(); };
+document.getElementById("mBackup").onclick=()=>{
+  const blob=new Blob([JSON.stringify({__matzip_backup:1,places:userPlaces,others:userOthers,visited},null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="matzip-backup-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  setDlg.close();
+  toast("백업 파일을 내려받았어요 — 다른 기기에서 복원할 수 있어요");
+};
+
 // ───────── 파일 가져오기 (인스타 내보내기 or 백업) ─────────
-document.getElementById("importBtn").onclick=()=>document.getElementById("fileInput").click();
 document.getElementById("fileInput").addEventListener("change", async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{
@@ -438,27 +523,32 @@ document.getElementById("fileInput").addEventListener("change", async e=>{
   e.target.value="";
 });
 
-// ───────── 백업 ─────────
-document.getElementById("backupBtn").onclick=()=>{
-  const blob=new Blob([JSON.stringify({__matzip_backup:1,places:userPlaces,others:userOthers,visited},null,1)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="matzip-backup-"+new Date().toISOString().slice(0,10)+".json"; a.click();
-  toast("백업 파일을 내려받았어요 — 다른 기기에서 📥로 복원하세요");
-};
+// ───────── 온보딩 ─────────
+const onboardEl=document.getElementById("onboard");
+function showOnboard(){ onboardEl.hidden=false; }
+function hideOnboard(){ onboardEl.hidden=true; localStorage.setItem("matzip_onboarded","1"); }
+document.getElementById("obStart").onclick=()=>{ hideOnboard(); openSync(); };
+document.getElementById("obSkip").onclick=hideOnboard;
 
 // ───────── 공유 타겟 (인스타 공유 → 앱) ─────────
+let hadShare=false;
 (function(){
   const sp=new URLSearchParams(location.search);
   const shared=[sp.get("title"),sp.get("text"),sp.get("url")].filter(Boolean).join("\n");
-  if(shared){ history.replaceState(null,"",location.pathname); openAdd(shared, URL_RE.test(shared)); }
+  if(shared){ hadShare=true; history.replaceState(null,"",location.pathname); openAdd(shared, URL_RE.test(shared)); }
 })();
 
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
 
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 render();
-if(syncKey) pullSync();
-else setTimeout(()=>toast("☁️ 버튼에서 동기화 암호를 설정하면 모든 기기의 목록이 하나로 합쳐져요"),1200);
+if(!hadShare && !localStorage.getItem("matzip_onboarded") && !syncKey && !allPlaces().length && !allOthers().length){
+  showOnboard();
+}else if(syncKey){
+  pullSync();
+}else{
+  setTimeout(()=>toast("⚙️ 설정 → 동기화 암호를 만들면 모든 기기가 같은 지도를 봐요"),1200);
+}
 </script>
 </body>
 </html>
