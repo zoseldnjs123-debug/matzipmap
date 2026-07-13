@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>맛집지도 — 인스타 맛집 릴스를 지도로</title>
+<title>릴스맛집지도 — 인스타 맛집 릴스를 지도로</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -91,7 +91,7 @@
 <body>
 <header>
   <div class="hrow">
-    <h1>맛집지도 <span class="count" id="count"></span></h1>
+    <h1>릴스맛집지도 <span class="count" id="count"></span></h1>
     <span class="hbtns">
       <button class="hbtn" id="setBtn" aria-label="설정">⚙️</button>
       <button class="hbtn primary" id="addBtn">＋ 추가</button>
@@ -109,8 +109,8 @@
     <h2>저장만 해둔 맛집 릴스,<br>지도 위에 자동으로</h2>
     <div class="ob-steps">
       <div class="ob-step"><span>📲</span><div><b>인스타에서 공유 한 번</b>가게 이름과 주소를 자동으로 찾아 등록해요</div></div>
-      <div class="ob-step"><span>🗺️</span><div><b>지도에서 한눈에</b>동네별로 모아보고, 가본 곳은 체크해요</div></div>
-      <div class="ob-step"><span>🔑</span><div><b>암호 하나로 어디서든</b>폰·아이패드·노트북이 같은 지도를 봐요</div></div>
+      <div class="ob-step"><span>🗺️</span><div><b>지도에서 한눈에</b>동네별로 모아보고 네이버 지도로 바로 연결돼요</div></div>
+      <div class="ob-step"><span>🔑</span><div><b>암호 하나로 친구·연인과 공유</b>같은 암호를 쓰면 하나의 지도를 함께 꾸며요</div></div>
     </div>
     <button class="ob-go" id="obStart">시작하기</button>
     <button class="ob-skip" id="obSkip">그냥 둘러볼게요</button>
@@ -345,8 +345,6 @@ function renderChips(){
   const mk=(label,on,fn)=>{const b=document.createElement("button");b.className="chip"+(on?" on":"");b.textContent=label;b.onclick=fn;c.appendChild(b);};
   mk("전체", filterRegion==="전체"&&filterVisit==="all", ()=>{filterRegion="전체";filterVisit="all";render();});
   regions.forEach(r=>mk(r, filterRegion===r, ()=>{filterRegion=filterRegion===r?"전체":r;render();}));
-  mk("🔖 가볼 곳", filterVisit==="no", ()=>{filterVisit=filterVisit==="no"?"all":"no";render();});
-  mk("✅ 가본 곳", filterVisit==="yes", ()=>{filterVisit=filterVisit==="yes"?"all":"yes";render();});
 }
 
 function passes(p){
