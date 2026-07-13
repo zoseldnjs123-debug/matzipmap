@@ -1,4 +1,4 @@
-const CACHE = "matzip-v3";
+const CACHE = "matzip-v4";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
